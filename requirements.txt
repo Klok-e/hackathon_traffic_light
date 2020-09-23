@@ -6,9 +6,11 @@ bzip2=1.0.8=h516909a_3
 ca-certificates=2020.6.20=hecda079_0
 cairo=1.16.0=h3fc0475_1005
 certifi=2020.6.20=py38h32f6830_0
+click=7.1.2=pyh9f0ad1d_0
 dbus=1.13.6=he372182_0
 expat=2.2.9=he1b5a44_2
 ffmpeg=4.3.1=h167e202_0
+flask=1.1.2=pyh9f0ad1d_0
 fontconfig=2.13.1=h1056068_1002
 freetype=2.10.2=he06d7ca_0
 gettext=0.19.8.1=hc5be6a0_1002
@@ -21,7 +23,9 @@ gstreamer=1.14.5=h36ae1b5_2
 harfbuzz=2.7.2=hee91db6_0
 hdf5=1.10.6=nompi_h3c11f04_101
 icu=67.1=he1b5a44_0
+itsdangerous=1.1.0=py_0
 jasper=1.900.1=h07fcdf6_1006
+jinja2=2.11.2=pyh9f0ad1d_0
 jpeg=9d=h516909a_0
 krb5=1.17.1=hfafb76e_3
 lame=3.100=h14c3975_1001
@@ -50,6 +54,7 @@ libxcb=1.13=h14c3975_1002
 libxkbcommon=0.10.0=he1b5a44_0
 libxml2=2.9.10=h68273f3_2
 lz4-c=1.9.2=he1b5a44_3
+markupsafe=1.1.1=py38h1e0a361_1
 mysql-common=8.0.21=2
 mysql-libs=8.0.21=hf3661c5_2
 ncurses=6.2=he6710b0_1
@@ -72,6 +77,7 @@ readline=8.0=h7b6447c_0
 setuptools=49.6.0=py38_0
 sqlite=3.33.0=h62c20be_0
 tk=8.6.10=hbc83047_0
+werkzeug=1.0.1=pyh9f0ad1d_0
 wheel=0.35.1=py_0
 x264=1!152.20180806=h14c3975_0
 xorg-kbproto=1.0.7=h14c3975_1002
