@@ -1,5 +1,14 @@
+import cv2 as cv
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route('/')
+def hello_world():
+    return 'Hello, World!'
+
 def main():
-    print("hello opencv")
+    app.run()
 
 
 if __name__ == "__main__":
