@@ -417,34 +417,3 @@ def save_weights(self, path='model.weights', cutoff=-1):
                     conv_layer.bias.data.cpu().numpy().tofile(f)
                 # Load conv weights
                 conv_layer.weight.data.cpu().numpy().tofile(f)
-
-
-def convert(cfg='cfg/yolov3-spp.cfg', weights='weights/yolov3-spp.weights'):
-    # Converts between PyTorch and Darknet format per extension (i.e. *.weights convert to *.pt and vice versa)
-    # from models import *; convert('cfg/yolov3-spp.cfg', 'weights/yolov3-spp.weights')
-
-    # Initialize model
-    model = Darknet(cfg)
-
-    # Load weights and save
-    if weights.endswith('.pt'):  # if PyTorch format
-        model.load_state_dict(torch.load(weights, map_location='cpu')['model'])
-        target = weights.rsplit('.', 1)[0] + '.weights'
-        save_weights(model, path=target, cutoff=-1)
-        print("Success: converted '%s' to '%s'" % (weights, target))
-
-    elif weights.endswith('.weights'):  # darknet format
-        _ = load_darknet_weights(model, weights)
-
-        chkpt = {'epoch': -1,
-                 'best_fitness': None,
-                 'training_results': None,
-                 'model': model.state_dict(),
-                 'optimizer': None}
-
-        target = weights.rsplit('.', 1)[0] + '.pt'
-        torch.save(chkpt, target)
-        print("Success: converted '%s' to '%s'" % (weights, target))
-
-    else:
-        print('Error: extension not supported.')

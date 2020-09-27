@@ -27,14 +27,15 @@ def main():
     import threading
     import cv2
     import numpy as np
+    from yolo_model import detect
 
     np.random.seed(42)
     capture = cv2.VideoCapture("out.mp4")
-    network = cv2.dnn.readNet("yolo/yolov3.weights", "yolo/yolov3.cfg")
-    with open("yolo/coco.names", "r") as f:
-        classes = [line.strip() for line in f.readlines()]
+    img_size = 512
+    model = detect.create_model("yolo_model/cfg/yolov3-spp.cfg", "yolo/yolov3-spp-ultralytics.pt", img_size)
+    classes = detect.load_classes("yolo_model/data/coco.names")
 
-    t = threading.Thread(target=video_detection.capture_images_continually, args=[capture, network, classes],
+    t = threading.Thread(target=video_detection.capture_images_continually, args=[capture, model, classes, img_size],
                          daemon=True)
     t.start()
 
