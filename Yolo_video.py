@@ -1,8 +1,9 @@
 import cv2
 import numpy as np
+
 # Load Yolo
-net = cv2.dnn.readNet("yolov3.weights", "yolov3.cfg")
-classes = []
+net = cv2.dnn.readNet("yolo/yolov3.weights", "yolo/yolov3.cfg")
+
 with open("coco.names", "r") as f:
     classes = [line.strip() for line in f.readlines()]
 layer_names = net.getLayerNames()
@@ -10,14 +11,14 @@ output_layers = [layer_names[i[0] - 1] for i in net.getUnconnectedOutLayers()]
 colors = np.random.uniform(0, 255, size=(len(classes), 3))
 
 # Loading video
-#fourcc = cv2.VideoWriter_fourcc(*"XVID")
-#out = cv2.VideoWriter("the_new_video_is.avi", fourcc , 25, (852, 480))
+# fourcc = cv2.VideoWriter_fourcc(*"XVID")
+# out = cv2.VideoWriter("the_new_video_is.avi", fourcc , 25, (852, 480))
 
 # repalce the test.mp4 with an video of your own
-camera = cv2.VideoCapture("f:/Video/Kharkov.mp4")
+camera = cv2.VideoCapture("out.mp4")
 camera.set(1, 260);
 while True:
-    _,img = camera.read()
+    _, img = camera.read()
     height, width, channels = img.shape
 
     # Detecting objects
@@ -34,7 +35,7 @@ while True:
             scores = detection[5:]
             class_id = np.argmax(scores)
             confidence = scores[class_id]
-            if (confidence > 0.5) and (class_id==2 or class_id==3 or class_id==5 or class_id==7):
+            if (confidence > 0.5) and (class_id == 2 or class_id == 3 or class_id == 5 or class_id == 7):
                 # Object detected
                 center_x = int(detection[0] * width)
                 center_y = int(detection[1] * height)
@@ -55,8 +56,8 @@ while True:
             x, y, w, h = boxes[i]
             label = str(classes[class_ids[i]])
             color = colors[i]
-            cv2.rectangle(img, (x, y), (x + w, y + h), (0,255,0), 2)
-            cv2.putText(img, label, (x, y + 30), font, 3, (0,255,0), 3)
+            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            cv2.putText(img, label, (x, y + 30), font, 3, (0, 255, 0), 3)
     cv2.imshow("Image", img)
     key = cv2.waitKey(1)
     if key == 27:
