@@ -1,62 +1,40 @@
 import cv2
-import threading
 import numpy as np
+import time
+from yolo_model import detect
+import torch
 
 outputFrame = None
 
 
-def capture_images_continually(capture: cv2.VideoCapture, network, classes):
+def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_size, device):
     global outputFrame
 
-    layer_names = network.getLayerNames()
-    unconnected = [layer_names[i[0] - 1] for i in network.getUnconnectedOutLayers()]
-
     while True:
+        t0 = time.time()
+
         ret, frame = capture.read()
-        height, width, channels = frame.shape
 
-        # Detecting objects
-        blob = cv2.dnn.blobFromImage(frame, 1. / 255., (416, 416), (0, 0, 0), True, crop=False)
-        network.setInput(blob)
-        outs = network.forward(unconnected)
+        with torch.no_grad():
+            boxes = detect.detect(model, frame, img_size, device=device)
 
-        # Showing informations on the screen
-        class_ids = []
-        confidences = []
-        boxes = []
-        for out in outs:
-            for detection in out:
-                scores = detection[5:]
-                class_id = np.argmax(scores)
-                confidence = scores[class_id]
-                if (confidence > 0.5) and (class_id == 2 or class_id == 3 or class_id == 5 or class_id == 7):
-                    # Object detected
-                    center_x = int(detection[0] * width)
-                    center_y = int(detection[1] * height)
-                    w = int(detection[2] * width)
-                    h = int(detection[3] * height)
-                    # Rectangle coordinates
-                    x = int(center_x - w / 2)
-                    y = int(center_y - h / 2)
-                    boxes.append([x, y, w, h])
-                    confidences.append(float(confidence))
-                    class_ids.append(class_id)
-
-        indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.5, 0.4)
+        boxes = list(filter(lambda x: x.class_index in [2, 3, 5, 7], boxes))
 
         font = cv2.FONT_HERSHEY_PLAIN
-        for i in range(len(boxes)):
-            if i in indexes:
-                x, y, w, h = boxes[i]
-                label = str(classes[class_ids[i]])
-                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 215, 0), 2)
-                cv2.putText(frame, label, (x, y + 30), font, 3, (0, 255, 0), 3)
+        for box in boxes:
+            label = str(classes[box.class_index])
+            x0, y0, x1, y1 = map(int, [box.x0, box.y0, box.x1, box.y1])
+            cv2.rectangle(frame, (x0, y0), (x1, y1), (0, 215, 0), 2)
+            cv2.putText(frame, label[0], (x0, y0 + 30), font, 2, (0, 255, 0), 2)
+            cv2.putText(frame, f"{box.confidence:.2}", (x0 + 50, y0 + 30), font, 2, (0, 255, 0), 2)
 
         if not ret:
             print('no video')
             capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
         outputFrame = frame
+
+        # print(f"frame time: {time.time() - t0:.2}")
 
 
 def generate_image_binary():
