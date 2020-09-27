@@ -1,6 +1,6 @@
 import cv2
-import threading
 import numpy as np
+import time
 
 outputFrame = None
 
@@ -12,6 +12,8 @@ def capture_images_continually(capture: cv2.VideoCapture, network, classes):
     unconnected = [layer_names[i[0] - 1] for i in network.getUnconnectedOutLayers()]
 
     while True:
+        t0 = time.time()
+
         ret, frame = capture.read()
         height, width, channels = frame.shape
 
@@ -57,6 +59,8 @@ def capture_images_continually(capture: cv2.VideoCapture, network, classes):
             capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
         outputFrame = frame
+
+        print(f"frame time: {time.time() - t0:.2}")
 
 
 def generate_image_binary():
