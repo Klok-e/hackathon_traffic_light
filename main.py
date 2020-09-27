@@ -26,13 +26,20 @@ def video_feed():
 def main():
     import threading
     import cv2
+    import numpy as np
 
+    np.random.seed(42)
     capture = cv2.VideoCapture("out.mp4")
+    network = cv2.dnn.readNet("yolo/yolov3.weights", "yolo/yolov3.cfg")
+    with open("yolo/coco.names", "r") as f:
+        classes = [line.strip() for line in f.readlines()]
 
-    t = threading.Thread(target=video_detection.capture_images_continually, args=[capture, ], daemon=True)
+    t = threading.Thread(target=video_detection.capture_images_continually, args=[capture, network, classes],
+                         daemon=True)
     t.start()
 
     app.run()
+    capture.release()
 
 
 if __name__ == "__main__":
