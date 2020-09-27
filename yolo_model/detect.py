@@ -48,7 +48,7 @@ def create_model(cfg, weights, imgsz, half=False, device="cpu") -> (Darknet, str
     return model, device
 
 
-def detect(model, img0, img_size, half=False, device="cpu", conf_thres=0.3, iou_thres=0.6, augment=True) -> List[BBox]:
+def detect(model, img0, img_size, half=False, device="cpu", conf_thres=0.3, iou_thres=0.6, augment=False) -> List[BBox]:
     # convert frame to network friendly format
     # Padded resize
     img = letterbox(img0, new_shape=img_size)[0]
