@@ -18,7 +18,7 @@ class BBox:
         self.confidence = confidence
 
 
-def create_model(cfg, weights, imgsz, half=False, device="cpu") -> Darknet:
+def create_model(cfg, weights, imgsz, half=False, device="cpu") -> (Darknet, str):
     # increase speed? idk
     torch.backends.cudnn.benchmark = True
 
@@ -45,7 +45,7 @@ def create_model(cfg, weights, imgsz, half=False, device="cpu") -> Darknet:
     # Run inference
     img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
     _ = model(img.half() if half else img.float()) if device.type != 'cpu' else None  # run once
-    return model
+    return model, device
 
 
 def detect(model, img0, img_size, half=False, device="cpu", conf_thres=0.3, iou_thres=0.6, augment=True) -> List[BBox]:
@@ -87,7 +87,7 @@ def detect(model, img0, img_size, half=False, device="cpu", conf_thres=0.3, iou_
             for *xyxy, conf, cls in reversed(det):
                 boxes.append(BBox(xyxy[0], xyxy[1], xyxy[2], xyxy[3], int(cls), conf))
 
-    print(f"inference time: {t2 - t1:.2}s")
+    # print(f"inference time: {t2 - t1:.2}s")
     return boxes
 
 

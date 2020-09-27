@@ -7,7 +7,7 @@ import torch
 outputFrame = None
 
 
-def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_size):
+def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_size, device):
     global outputFrame
 
     while True:
@@ -16,13 +16,17 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
         ret, frame = capture.read()
 
         with torch.no_grad():
-            boxes = detect.detect(model, frame, img_size)
+            boxes = detect.detect(model, frame, img_size, device=device)
+
+        boxes = list(filter(lambda x: x.class_index in [2, 3, 5, 7], boxes))
 
         font = cv2.FONT_HERSHEY_PLAIN
         for box in boxes:
             label = str(classes[box.class_index])
-            cv2.rectangle(frame, (box.x0, box.y0), (box.x1, box.y1), (0, 215, 0), 2)
-            cv2.putText(frame, label, (box.x0, box.y0 + 30), font, 3, (0, 255, 0), 3)
+            x0, y0, x1, y1 = map(int, [box.x0, box.y0, box.x1, box.y1])
+            cv2.rectangle(frame, (x0, y0), (x1, y1), (0, 215, 0), 2)
+            cv2.putText(frame, label[0], (x0, y0 + 30), font, 2, (0, 255, 0), 2)
+            cv2.putText(frame, f"{box.confidence:.2}", (x0 + 50, y0 + 30), font, 2, (0, 255, 0), 2)
 
         # # Detecting objects
         # blob = cv2.dnn.blobFromImage(frame, 1. / 255., (416, 416), (0, 0, 0), True, crop=False)
@@ -67,7 +71,7 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
 
         outputFrame = frame
 
-        print(f"frame time: {time.time() - t0:.2}")
+        # print(f"frame time: {time.time() - t0:.2}")
 
 
 def generate_image_binary():

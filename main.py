@@ -32,10 +32,13 @@ def main():
     np.random.seed(42)
     capture = cv2.VideoCapture("out.mp4")
     img_size = 512
-    model = detect.create_model("yolo_model/cfg/yolov3-spp.cfg", "yolo/yolov3-spp-ultralytics.pt", img_size)
+    model, device = detect.create_model("yolo_model/cfg/yolov3-spp.cfg", "yolo/yolov3-spp-ultralytics.pt", img_size,
+                                        device="")
     classes = detect.load_classes("yolo_model/data/coco.names")
 
-    t = threading.Thread(target=video_detection.capture_images_continually, args=[capture, model, classes, img_size],
+    t = threading.Thread(target=video_detection.capture_images_continually,
+                         kwargs={"capture": capture, "model": model, "classes": classes,
+                                 "img_size": img_size, "device": device},
                          daemon=True)
     t.start()
 
