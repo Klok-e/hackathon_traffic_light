@@ -3,6 +3,7 @@ import numpy as np
 import time
 from yolo_model import detect
 import torch
+from yolo_model import sort
 
 outputFrame = None
 
@@ -10,6 +11,7 @@ outputFrame = None
 def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_size, device):
     global outputFrame
 
+    track = sort.Sort()
     while True:
         t0 = time.time()
 
@@ -31,6 +33,8 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
         if not ret:
             print('no video')
             capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
+
+        track.update()
 
         outputFrame = frame
 
