@@ -4,6 +4,7 @@ import time
 from yolo_model import detect
 import torch
 from yolo_model import sort
+from yolo_model.detect import BBox
 
 outputFrame = None
 
@@ -22,19 +23,22 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
 
         boxes = list(filter(lambda x: x.class_index in [2, 3, 5, 7], boxes))
 
-        font = cv2.FONT_HERSHEY_PLAIN
-        for box in boxes:
-            label = str(classes[box.class_index])
-            x0, y0, x1, y1 = map(int, [box.x0, box.y0, box.x1, box.y1])
-            cv2.rectangle(frame, (x0, y0), (x1, y1), (0, 215, 0), 2)
-            cv2.putText(frame, label[0], (x0, y0 + 30), font, 2, (0, 255, 0), 2)
-            cv2.putText(frame, f"{box.confidence:.2}", (x0 + 50, y0 + 30), font, 2, (0, 255, 0), 2)
-
         if not ret:
             print('no video')
             capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            continue
 
-        track.update()
+        def box_to_arr(box: BBox):
+            return np.array([box.x0, box.y0, box.x1, box.y1, box.confidence])
+
+        boxes = np.stack(list(map(box_to_arr, boxes)), axis=0)
+        tracked_objects = track.update(boxes)
+
+        font = cv2.FONT_HERSHEY_PLAIN
+        for x0, y0, x1, y1, obj_id in tracked_objects:
+            x0, y0, x1, y1 = map(int, [x0, y0, x1, y1])
+            cv2.rectangle(frame, (x0, y0), (x1, y1), (0, 215, 0), 2)
+            cv2.putText(frame, str(obj_id), (x0, y0 + 30), font, 2, (0, 255, 0), 2)
 
         outputFrame = frame
 
@@ -43,7 +47,7 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
 
 def generate_image_binary():
     # grab global references to the output frame and lock variables
-    global outputFrame, lock
+    global outputFrame
     # loop over frames from the output stream
     while True:
         # wait until the lock is acquired

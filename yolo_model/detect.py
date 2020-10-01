@@ -85,7 +85,8 @@ def detect(model, img0, img_size, half=False, device="cpu", conf_thres=0.3, iou_
 
             # Write results
             for *xyxy, conf, cls in reversed(det):
-                boxes.append(BBox(xyxy[0], xyxy[1], xyxy[2], xyxy[3], int(cls), conf))
+                # .data[0] to convert tensors to numbers
+                boxes.append(BBox(xyxy[0].item(), xyxy[1].item(), xyxy[2].item(), xyxy[3].item(), int(cls), conf.item()))
 
     # print(f"inference time: {t2 - t1:.2}s")
     return boxes
