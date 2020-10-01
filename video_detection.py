@@ -3,6 +3,7 @@ import numpy as np
 import time
 from yolo_model import detect
 import torch
+from yolo_model import sort
 
 outputFrame = None
 
@@ -10,36 +11,53 @@ outputFrame = None
 def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_size, device):
     global outputFrame
 
+    tracked_paths = {}
+    track = sort.Sort()
+    i = 0
     while True:
-        t0 = time.time()
-
+        i += 1
         ret, frame = capture.read()
 
         with torch.no_grad():
             boxes = detect.detect(model, frame, img_size, device=device)
 
-        boxes = list(filter(lambda x: x.class_index in [2, 3, 5, 7], boxes))
-
-        font = cv2.FONT_HERSHEY_PLAIN
-        for box in boxes:
-            label = str(classes[box.class_index])
-            x0, y0, x1, y1 = map(int, [box.x0, box.y0, box.x1, box.y1])
-            cv2.rectangle(frame, (x0, y0), (x1, y1), (0, 215, 0), 2)
-            cv2.putText(frame, label[0], (x0, y0 + 30), font, 2, (0, 255, 0), 2)
-            cv2.putText(frame, f"{box.confidence:.2}", (x0 + 50, y0 + 30), font, 2, (0, 255, 0), 2)
+        boxes = boxes[np.isin(boxes[:, 5], [2, 3, 5, 7])]
 
         if not ret:
             print('no video')
             capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            continue
+
+        boxes_no_class = boxes[:, :-1]
+        tracked_objects = track.update(boxes_no_class)
+
+        font = cv2.FONT_HERSHEY_PLAIN
+        for x0, y0, x1, y1, obj_id in tracked_objects:
+            x0, y0, x1, y1 = map(int, [x0, y0, x1, y1])
+            if obj_id not in tracked_paths:
+                tracked_paths[obj_id] = []
+            path = tracked_paths[obj_id]
+            path.append((int((x0 + x1) / 2.), int((y0 + y1) / 2.), time.time()))
+
+            for i in range(len(path) - 1):
+                cv2.line(frame, tuple(path[i][:2]), tuple(path[i + 1][:2]), (0, 255, 0), 2)
+
+            cv2.rectangle(frame, (x0, y0), (x1, y1), (0, 215, 0), 2)
 
         outputFrame = frame
+
+        # clean old paths (older than 30 seconds)
+        if i % 1000 == 0:
+            tracked_paths = {k: v for k, v in tracked_paths.items() if len(v) != 0}
+            for key, val in tracked_paths.items():
+                val[:] = [[*a, time_created] for *a, time_created in val if time.time() - time_created < 30]
 
         # print(f"frame time: {time.time() - t0:.2}")
 
 
 def generate_image_binary():
     # grab global references to the output frame and lock variables
-    global outputFrame, lock
+    global outputFrame
     # loop over frames from the output stream
     while True:
         # wait until the lock is acquired

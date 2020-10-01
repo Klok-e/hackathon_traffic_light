@@ -48,7 +48,10 @@ def create_model(cfg, weights, imgsz, half=False, device="cpu") -> (Darknet, str
     return model, device
 
 
-def detect(model, img0, img_size, half=False, device="cpu", conf_thres=0.3, iou_thres=0.6, augment=False) -> List[BBox]:
+def detect(model, img0, img_size, half=False, device="cpu", conf_thres=0.3, iou_thres=0.6, augment=False) -> np.ndarray:
+    """
+    :return: array of rows where the elements are x0, y0, x1, y1, confidence, class
+    """
     # convert frame to network friendly format
     # Padded resize
     img = letterbox(img0, new_shape=img_size)[0]
@@ -84,11 +87,12 @@ def detect(model, img0, img_size, half=False, device="cpu", conf_thres=0.3, iou_
             det[:, :4] = scale_coords(img.shape[2:], det[:, :4], img0.shape).round()
 
             # Write results
-            for *xyxy, conf, cls in reversed(det):
-                boxes.append(BBox(xyxy[0], xyxy[1], xyxy[2], xyxy[3], int(cls), conf))
+            for row in det:
+                # .data[0] to convert tensors to numbers
+                boxes.append(row.cpu().numpy())
 
     # print(f"inference time: {t2 - t1:.2}s")
-    return boxes
+    return np.stack(boxes, axis=0)
 
 
 if __name__ == '__main__':
