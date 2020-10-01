@@ -21,7 +21,7 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
         with torch.no_grad():
             boxes = detect.detect(model, frame, img_size, device=device)
 
-        boxes = list(filter(lambda x: x.class_index in [2, 3, 5, 7], boxes))
+        boxes = boxes[np.isin(boxes[:, 5], [2, 3, 5, 7])]  # in [2, 3, 5, 7]
 
         if not ret:
             print('no video')
@@ -31,8 +31,8 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
         def box_to_arr(box: BBox):
             return np.array([box.x0, box.y0, box.x1, box.y1, box.confidence])
 
-        boxes = np.stack(list(map(box_to_arr, boxes)), axis=0)
-        tracked_objects = track.update(boxes)
+        boxes_no_class = boxes[:, :-1]
+        tracked_objects = track.update(boxes_no_class)
 
         font = cv2.FONT_HERSHEY_PLAIN
         for x0, y0, x1, y1, obj_id in tracked_objects:
