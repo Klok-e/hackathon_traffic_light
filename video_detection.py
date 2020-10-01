@@ -28,9 +28,6 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
             capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
             continue
 
-        def box_to_arr(box: BBox):
-            return np.array([box.x0, box.y0, box.x1, box.y1, box.confidence])
-
         boxes_no_class = boxes[:, :-1]
         tracked_objects = track.update(boxes_no_class)
 
