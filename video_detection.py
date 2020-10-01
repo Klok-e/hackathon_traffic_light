@@ -4,7 +4,6 @@ import time
 from yolo_model import detect
 import torch
 from yolo_model import sort
-from yolo_model.detect import BBox
 
 outputFrame = None
 
@@ -12,16 +11,17 @@ outputFrame = None
 def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_size, device):
     global outputFrame
 
+    tracked_paths = {}
     track = sort.Sort()
+    i = 0
     while True:
-        t0 = time.time()
-
+        i += 1
         ret, frame = capture.read()
 
         with torch.no_grad():
             boxes = detect.detect(model, frame, img_size, device=device)
 
-        boxes = boxes[np.isin(boxes[:, 5], [2, 3, 5, 7])]  # in [2, 3, 5, 7]
+        boxes = boxes[np.isin(boxes[:, 5], [2, 3, 5, 7])]
 
         if not ret:
             print('no video')
@@ -34,10 +34,23 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
         font = cv2.FONT_HERSHEY_PLAIN
         for x0, y0, x1, y1, obj_id in tracked_objects:
             x0, y0, x1, y1 = map(int, [x0, y0, x1, y1])
+            if obj_id not in tracked_paths:
+                tracked_paths[obj_id] = []
+            path = tracked_paths[obj_id]
+            path.append((int((x0 + x1) / 2.), int((y0 + y1) / 2.), time.time()))
+
+            for i in range(len(path) - 1):
+                cv2.line(frame, tuple(path[i][:2]), tuple(path[i + 1][:2]), (0, 255, 0), 2)
+
             cv2.rectangle(frame, (x0, y0), (x1, y1), (0, 215, 0), 2)
-            cv2.putText(frame, str(obj_id), (x0, y0 + 30), font, 2, (0, 255, 0), 2)
 
         outputFrame = frame
+
+        # clean old paths (older than 30 seconds)
+        if i % 1000 == 0:
+            tracked_paths = {k: v for k, v in tracked_paths.items() if len(v) != 0}
+            for key, val in tracked_paths.items():
+                val[:] = [[*a, time_created] for *a, time_created in val if time.time() - time_created < 30]
 
         # print(f"frame time: {time.time() - t0:.2}")
 
