@@ -40,7 +40,9 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
                             (36, 255, 12), 2)
 
         boxes_no_class = boxes[:, :-1]
-        color = Counter(list(filter(lambda x: x != 'no color', map(lambda x: x[0], lights)))).most_common()
+        #most_common return list of tuple -> [0][0]
+        color = Counter(list(filter(lambda x: x != 'no color', map(lambda x: x[0], lights)))).most_common()[0][0]
+        # print(color)
         tracked_objects = track.update(boxes_no_class)
 
         font = cv2.FONT_HERSHEY_PLAIN
@@ -55,10 +57,10 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
                 cv2.line(frame, tuple(path[i][:2]), tuple(path[i + 1][:2]), (0, 255, 0), 2)
             if len(path) > 3:
                 ind = len(path) - 2
-                # cv2.line(frame, tuple(path[ind - 2][:2]), tuple(path[ind][:2]), (215, 0, 0), 2)
+                # cv2.line(frame, tuple(path[ind - 2][:2]), tuple(path[ind][:2]), (0, 0, 215), 4)                
                 if line_intersection(LINE_COORD,
                                      (tuple(path[ind - 2][:2]), tuple(path[ind][:2]))) and color == 'red or yellow':
-                    cv2.rectangle(frame, (x0, y0), (x1, y1), (0, 0, 215), 2)
+                    cv2.rectangle(frame, (x0, y0), (x1, y1), (0, 0, 215), 4)
                 else:
                     cv2.rectangle(frame, (x0, y0), (x1, y1), (0, 215, 0), 2)
             else:
@@ -149,18 +151,16 @@ def traffic_color(frame, traffic_lights):
 
 
 def line_intersection(line1, line2):
-    xdiff = (line1[0][0] - line1[1][0], line2[0][0] - line2[1][0])
-    ydiff = (line1[0][1] - line1[1][1], line2[0][1] - line2[1][1])
-
-    def det(a, b):
-        return a[0] * b[1] - a[1] * b[0]
-
-    div = det(xdiff, ydiff)
-    if div == 0:
+    x1, y1 = line1[0]
+    x2, y2 = line1[1]
+    x3, y3 = line2[0]
+    x4, y4 = line2[1]
+    denominator=(y4-y3)*(x1-x2)-(x4-x3)*(y1-y2)
+    if denominator == 0:
         return False
-
-    d = (det(*line1), det(*line2))
-    x = det(d, xdiff) / div
-    y = det(d, ydiff) / div
-    temp = (x - line1[0][0]) * (line1[1][1] - line1[0][1]) - (y - line1[0][1]) * (line1[1][0] - line1[0][0])
-    return temp == 0 and max(line1[0][0], line1[1][0]) > x
+    numerator_a=(x4-x2)*(y4-y3)-(x4-x3)*(y4-y2)
+    numerator_b=(x1-x2)*(y4-y2)-(x4-x2)*(y1-y2)
+    Ua=numerator_a/denominator
+    Ub=numerator_b/denominator
+    return Ua >=0 and Ua <=1 and Ub >=0 and Ub <=1:
+        
