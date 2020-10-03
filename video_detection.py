@@ -47,7 +47,7 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
         lights = traffic_color(frame, traffic_lights)
 
         for color, light in lights:
-            if color != 'no color':
+            if color != NO_COLOR:
                 cv2.rectangle(frame, (light[0], light[1]), (light[2], light[3]), (255, 215, 0), 2)
                 cv2.putText(frame, color, (int(light[0]), int(light[1] - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.9,
                             (36, 255, 12), 2)
