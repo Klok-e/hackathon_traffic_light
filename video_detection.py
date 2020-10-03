@@ -47,7 +47,7 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
                             (36, 255, 12), 2)
 
         boxes_no_class = boxes[:, :-1]
-        color = Counter(list(filter(lambda x: x != 'no color', map(lambda x: x[0], lights)))).most_common()
+        color = Counter(list(filter(lambda x: x != 'no color', map(lambda x: x[0], lights)))).most_common()[0][0]
         tracked_objects = track.update(boxes_no_class)
 
         font = cv2.FONT_HERSHEY_PLAIN
@@ -159,8 +159,17 @@ def traffic_color(frame, traffic_lights):
 
 
 def line_intersection(line1, line2):
-    def det(a, b):
-        return a[0] * b[1] - a[1] * b[0]
+    # assumes line segments are stored in the format [(x0,y0),(x1,y1)]
+    def intersects(s0, s1):
+        dx0 = s0[1][0] - s0[0][0]
+        dx1 = s1[1][0] - s1[0][0]
+        dy0 = s0[1][1] - s0[0][1]
+        dy1 = s1[1][1] - s1[0][1]
+        p0 = dy1 * (s1[1][0] - s0[0][0]) - dx1 * (s1[1][1] - s0[0][1])
+        p1 = dy1 * (s1[1][0] - s0[1][0]) - dx1 * (s1[1][1] - s0[1][1])
+        p2 = dy0 * (s0[1][0] - s1[0][0]) - dx0 * (s0[1][1] - s1[0][1])
+        p3 = dy0 * (s0[1][0] - s1[1][0]) - dx0 * (s0[1][1] - s1[1][1])
+        return (p0 * p1 <= 0) and (p2 * p3 <= 0)
 
     for i in range(len(line1) - 1):
         for k in range(len(line2) - 1):
@@ -169,18 +178,6 @@ def line_intersection(line1, line2):
             l2pos1 = line2[k]
             l2pos2 = line2[k + 1]
 
-            xdiff = (l1pos1[0] - l1pos2[0], l2pos1[0] - l2pos2[0])
-            ydiff = (l1pos1[1] - l1pos2[1], l2pos1[1] - l2pos2[1])
-
-            div = det(xdiff, ydiff)
-            if div == 0:
-                continue
-
-            d = (det(l1pos1, l1pos2), det(l2pos1, l2pos2))
-            x = det(d, xdiff) / div
-            y = det(d, ydiff) / div
-            temp = (x - l1pos1[0]) * (l1pos2[1] - l1pos1[1]) - (y - l1pos1[1]) * (l1pos2[0] - l1pos1[0])
-            if temp == 0 and max(l1pos1[0], l1pos2[0]) > x:
+            if intersects((l1pos1, l1pos2), (l2pos1, l2pos2)):
                 return True
-            # else continue
     return False
