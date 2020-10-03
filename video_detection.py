@@ -6,16 +6,22 @@ import torch
 from yolo_model import sort
 from collections import Counter
 
+NO_COLOR = 'no color'
+RED_OR_YELLOW = 'red or yellow'
+GREEN = 'green'
+
 outputFrame = None
 LINE_COORD = ((500, 1500), (3350, 1450))  # only for aziz1
+LINE_COORD_COLOR = NO_COLOR
 
 PRINT_FRAME_DURATION = False
 PRINT_ENCODE_DURATION = False
 
 
 def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_size, device):
-    global outputFrame
+    global outputFrame, LINE_COORD_COLOR
 
+    violations = {}
     tracked_paths = {}
     track = sort.Sort()
     i = 0
@@ -41,15 +47,17 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
         lights = traffic_color(frame, traffic_lights)
 
         for color, light in lights:
-            if color != 'no color':
+            if color != NO_COLOR:
                 cv2.rectangle(frame, (light[0], light[1]), (light[2], light[3]), (255, 215, 0), 2)
                 cv2.putText(frame, color, (int(light[0]), int(light[1] - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.9,
                             (36, 255, 12), 2)
 
         boxes_no_class = boxes[:, :-1]
-        #most_common return list of tuple -> [0][0]
-        color = Counter(list(filter(lambda x: x != 'no color', map(lambda x: x[0], lights)))).most_common()[0][0]
-        # print(color)
+
+        detected_tr_lights = Counter(list(filter(lambda x: x != NO_COLOR, map(lambda x: x[0], lights)))).most_common()
+        if len(detected_tr_lights) > 0:
+            LINE_COORD_COLOR = detected_tr_lights[0][0]
+
         tracked_objects = track.update(boxes_no_class)
 
         font = cv2.FONT_HERSHEY_PLAIN
@@ -60,18 +68,22 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
             path = tracked_paths[obj_id]
             path.append((int((x0 + x1) / 2.), int((y0 + y1) / 2.), time.time()))
 
-            for i in range(len(path) - 1):
-                cv2.line(frame, tuple(path[i][:2]), tuple(path[i + 1][:2]), (0, 255, 0), 2)
-            if len(path) > 3:
-                ind = len(path) - 2
-                # cv2.line(frame, tuple(path[ind - 2][:2]), tuple(path[ind][:2]), (0, 0, 215), 4)                
-                if line_intersection(LINE_COORD,
-                                     (tuple(path[ind - 2][:2]), tuple(path[ind][:2]))) and color == 'red or yellow':
-                    cv2.rectangle(frame, (x0, y0), (x1, y1), (0, 0, 215), 4)
-                else:
-                    cv2.rectangle(frame, (x0, y0), (x1, y1), (0, 215, 0), 2)
+            if line_intersection(LINE_COORD, path) and LINE_COORD_COLOR == RED_OR_YELLOW:
+                if obj_id not in violations:
+                    print("violation!")
+                    # TODO: store something useful here, otherwise it's just a hashset
+                    violations[obj_id] = None
+
+            if obj_id in violations:
+                rect_rgb = (0, 0, 215)
+                line_rgb = (0, 0, 215)
             else:
-                cv2.rectangle(frame, (x0, y0), (x1, y1), (0, 215, 0), 2)
+                rect_rgb = (0, 215, 0)
+                line_rgb = (0, 255, 0)
+            cv2.rectangle(frame, (x0, y0), (x1, y1), rect_rgb, 2)
+
+            for i in range(len(path) - 1):
+                cv2.line(frame, tuple(path[i][:2]), tuple(path[i + 1][:2]), line_rgb, 2)
 
         cv2.line(frame, LINE_COORD[0], LINE_COORD[1], (255, 0, 0), 2)
 
@@ -153,27 +165,37 @@ def traffic_color(frame, traffic_lights):
                         green_ocur += 1
 
         if red_occur > (ligth1.size / 2.7):
-            color = 'red or yellow'
+            color = RED_OR_YELLOW
         elif green_ocur > (ligth2.size / 2.7):
-            color = 'green'
+            color = GREEN
         else:
-            color = 'no color'
+            color = NO_COLOR
         result.append((color, element))
 
     return result
 
 
 def line_intersection(line1, line2):
-    x1, y1 = line1[0]
-    x2, y2 = line1[1]
-    x3, y3 = line2[0]
-    x4, y4 = line2[1]
-    denominator=(y4-y3)*(x1-x2)-(x4-x3)*(y1-y2)
-    if denominator == 0:
-        return False
-    numerator_a=(x4-x2)*(y4-y3)-(x4-x3)*(y4-y2)
-    numerator_b=(x1-x2)*(y4-y2)-(x4-x2)*(y1-y2)
-    Ua=numerator_a/denominator
-    Ub=numerator_b/denominator
-    return Ua >=0 and Ua <=1 and Ub >=0 and Ub <=1:
-        
+    # stolen from here https://stackoverflow.com/a/62625458
+    # assumes line segments are stored in the format [(x0,y0),(x1,y1)]
+    def intersects(s0, s1):
+        dx0 = s0[1][0] - s0[0][0]
+        dx1 = s1[1][0] - s1[0][0]
+        dy0 = s0[1][1] - s0[0][1]
+        dy1 = s1[1][1] - s1[0][1]
+        p0 = dy1 * (s1[1][0] - s0[0][0]) - dx1 * (s1[1][1] - s0[0][1])
+        p1 = dy1 * (s1[1][0] - s0[1][0]) - dx1 * (s1[1][1] - s0[1][1])
+        p2 = dy0 * (s0[1][0] - s1[0][0]) - dx0 * (s0[1][1] - s1[0][1])
+        p3 = dy0 * (s0[1][0] - s1[1][0]) - dx0 * (s0[1][1] - s1[1][1])
+        return (p0 * p1 <= 0) and (p2 * p3 <= 0)
+
+    for i in range(len(line1) - 1):
+        for k in range(len(line2) - 1):
+            l1pos1 = line1[i]
+            l1pos2 = line1[i + 1]
+            l2pos1 = line2[k]
+            l2pos2 = line2[k + 1]
+
+            if intersects((l1pos1, l1pos2), (l2pos1, l2pos2)):
+                return True
+    return False
