@@ -174,6 +174,7 @@ def traffic_color(frame, traffic_lights):
 
 
 def line_intersection(line1, line2):
+    # stolen from here https://stackoverflow.com/a/62625458
     # assumes line segments are stored in the format [(x0,y0),(x1,y1)]
     def intersects(s0, s1):
         dx0 = s0[1][0] - s0[0][0]
