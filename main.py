@@ -11,7 +11,7 @@ app = Flask(__name__,
 
 @app.route('/')
 def root_redirect():
-	return flask.redirect("/index.html")
+    return flask.redirect("/index.html")
 
 
 @app.route('/index.html')
@@ -26,16 +26,17 @@ def video_feed():
 
 @app.route("/coordinates", methods=['POST'])
 def coordinates():
-	x = request.form['x']
-	print("x=" + x)
-	y = request.form['y']
-	print("y=" + y)
-	return flask.render_template("index.html")
+    x = request.form['x']
+    print("x=" + x)
+    y = request.form['y']
+    print("y=" + y)
+    return flask.render_template("index.html")
+
 
 @app.route("/rtl", methods=['POST'])
 def rtl():
-	pass
-	return flask.render_template("index.html")
+    pass
+    return flask.render_template("index.html")
 
 
 def main():
@@ -47,8 +48,10 @@ def main():
     np.random.seed(42)
     capture = cv2.VideoCapture("C:/Python/Test_test/project/hackathon_traffic_light/out32.mp4")
     img_size = 512
-    model, device = detect.create_model("C:/Python/Test_test/project/hackathon_traffic_light/yolo_model/cfg/yolov3-spp.cfg", "C:/Python/Test_test/project/hackathon_traffic_light/yolo/yolov3-spp-ultralytics.pt", img_size,
-                                        device="")
+    model, device = detect.create_model(
+        "C:/Python/Test_test/project/hackathon_traffic_light/yolo_model/cfg/yolov3-spp.cfg",
+        "C:/Python/Test_test/project/hackathon_traffic_light/yolo/yolov3-spp-ultralytics.pt", img_size,
+        device="")
     classes = detect.load_classes("C:/Python/Test_test/project/hackathon_traffic_light/yolo_model/data/coco.names")
 
     t = threading.Thread(target=video_detection.capture_images_continually,

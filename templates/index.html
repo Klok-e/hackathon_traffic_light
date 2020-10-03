@@ -6,49 +6,54 @@
     <title>Title</title>
 
     <style>
-    		
-    	#xx {
-    		position: absolute;
-			left: 75%;
-			top: 10%;
-			width: 8%;
-			height: 2%
-    	}
-    	#yy {
-    		position: absolute;
-			left: 75%;
-			top: 15%;
-			width: 8%;
-			height: 2%
-    	}
-    	#x {
-    		position: absolute;
-    		left: 73.5%;
-    		top: 8.5%;
-    		font-size: 130%;
-    	}
-    	#y {
-    		position: absolute;
-    		left: 73.5%;
-    		top: 13.5%;
-    		font-size: 130%;
-    	}
-    	#submit {
-    		position: absolute;
-    		left: 74%;
-    		top: 19%;
-    		width: 7.5%;
-    		height: 3.5%;
-    		font-size: 110%
-    	}
-    	#rtl {
-    		position: absolute;
-    		left: 74%;
-    		top: 27%;
-    		width: 7.5%;
-    		height: 3.5%;
-    		font-size: 110%
-    	}
+
+        #xx {
+            position: absolute;
+            left: 75%;
+            top: 10%;
+            width: 8%;
+            height: 2%
+        }
+
+        #yy {
+            position: absolute;
+            left: 75%;
+            top: 15%;
+            width: 8%;
+            height: 2%
+        }
+
+        #x {
+            position: absolute;
+            left: 73.5%;
+            top: 8.5%;
+            font-size: 130%;
+        }
+
+        #y {
+            position: absolute;
+            left: 73.5%;
+            top: 13.5%;
+            font-size: 130%;
+        }
+
+        #submit {
+            position: absolute;
+            left: 74%;
+            top: 19%;
+            width: 7.5%;
+            height: 3.5%;
+            font-size: 110%
+        }
+
+        #rtl {
+            position: absolute;
+            left: 74%;
+            top: 27%;
+            width: 7.5%;
+            height: 3.5%;
+            font-size: 110%
+        }
 
     </style>
 
@@ -56,17 +61,17 @@
 <body>
 
 <div>
-	<form action="{{ url_for('coordinates') }}" method="post">
-		<p id="x">x:</p>
-		<p id="y">y:</p>
-		<input id="xx" name="x">
-		<input id="yy" name="y">
-		<input id="submit" type="submit" value="Отправить координаты">
-	</form>
+    <form action="{{ url_for('coordinates') }}" method="post">
+        <p id="x">x:</p>
+        <p id="y">y:</p>
+        <input id="xx" name="x">
+        <input id="yy" name="y">
+        <input id="submit" type="submit" value="Отправить координаты">
+    </form>
 
-	<form action="{{ url_for('rtl') }}" method="post">
-		<input id="rtl" type="submit" value="Распознать светофор">
-	</form>
+    <form action="{{ url_for('rtl') }}" method="post">
+        <input id="rtl" type="submit" value="Распознать светофор">
+    </form>
 </div>
 
 <img src="{{ url_for('video_feed') }}">
