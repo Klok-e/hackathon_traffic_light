@@ -4,9 +4,10 @@ import time
 from yolo_model import detect
 import torch
 from yolo_model import sort
+from collections import Counter
 
 outputFrame = None
-
+LINE_COORD = ((500, 1500), (3350, 1450)) # only for aziz1
 
 def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_size, device):
     global outputFrame
@@ -29,9 +30,17 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
             capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
             continue
 
+        lights = traffic_color(frame, traffic_lights)
+
+        for color, light in lights:
+            if color != 'no color':
+                cv2.rectangle(frame, (light[0], light[1]), (light[2], light[3]), (255, 215, 0), 2)
+                cv2.putText(frame, color, (int(light[0]), int(light[1] - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36,255,12), 2)
+
         boxes_no_class = boxes[:, :-1]
-        
+        color = Counter(list(filter(lambda x: x != 'no color', map(lambda x: x[0], lights)))).most_common()
         tracked_objects = track.update(boxes_no_class)
+        
 
         font = cv2.FONT_HERSHEY_PLAIN
         for x0, y0, x1, y1, obj_id in tracked_objects:
@@ -43,16 +52,21 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
 
             for i in range(len(path) - 1):
                 cv2.line(frame, tuple(path[i][:2]), tuple(path[i + 1][:2]), (0, 255, 0), 2)
-
-            cv2.rectangle(frame, (x0, y0), (x1, y1), (0, 215, 0), 2)
+            if len(path) > 3:
+                ind = len(path) - 2
+                # cv2.line(frame, tuple(path[ind - 2][:2]), tuple(path[ind][:2]), (215, 0, 0), 2)
+                if line_intersection(LINE_COORD, (tuple(path[ind - 2][:2]), tuple(path[ind][:2]))) and color == 'red or yellow':
+                    cv2.rectangle(frame, (x0, y0), (x1, y1), (0, 0, 215), 2)
+                else:
+                    cv2.rectangle(frame, (x0, y0), (x1, y1), (0, 215, 0), 2)    
+            else:
+                cv2.rectangle(frame, (x0, y0), (x1, y1), (0, 215, 0), 2)
+            
         
-        lights = traffic_color(frame, traffic_lights)
-
-        for color, light in lights:
-            if color != 'no color':
-                cv2.rectangle(frame, (light[0], light[1]), (light[2], light[3]), (255, 215, 0), 2)
-                cv2.putText(frame, color, (int(light[0]), int(light[1] - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36,255,12), 2)   
+           
         
+        cv2.line(frame, LINE_COORD[0], LINE_COORD[1], (255, 0, 0), 2)
+
         outputFrame = frame
 
         # clean old paths (older than 30 seconds)
@@ -139,6 +153,23 @@ def traffic_color(frame, traffic_lights):
     return result
     
 
+
+def line_intersection(line1, line2):
+    xdiff = (line1[0][0] - line1[1][0], line2[0][0] - line2[1][0])
+    ydiff = (line1[0][1] - line1[1][1], line2[0][1] - line2[1][1])
+
+    def det(a, b):
+        return a[0] * b[1] - a[1] * b[0]
+
+    div = det(xdiff, ydiff)
+    if div == 0:
+       return False
+
+    d = (det(*line1), det(*line2))
+    x = det(d, xdiff) / div
+    y = det(d, ydiff) / div
+    temp = (x - line1[0][0]) * (line1[1][1] - line1[0][1]) - (y - line1[0][1]) * (line1[1][0] - line1[0][0])
+    return temp == 0 and max(line1[0][0], line1[1][0]) > x
 
 
         
