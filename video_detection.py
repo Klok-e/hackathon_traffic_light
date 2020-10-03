@@ -53,9 +53,11 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
                             (36, 255, 12), 2)
 
         boxes_no_class = boxes[:, :-1]
+
         detected_tr_lights = Counter(list(filter(lambda x: x != NO_COLOR, map(lambda x: x[0], lights)))).most_common()
         if len(detected_tr_lights) > 0:
             LINE_COORD_COLOR = detected_tr_lights[0][0]
+
         tracked_objects = track.update(boxes_no_class)
 
         font = cv2.FONT_HERSHEY_PLAIN
