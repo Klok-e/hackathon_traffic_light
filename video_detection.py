@@ -6,16 +6,22 @@ import torch
 from yolo_model import sort
 from collections import Counter
 
+NO_COLOR = 'no color'
+RED_OR_YELLOW = 'red or yellow'
+GREEN = 'green'
+
 outputFrame = None
 LINE_COORD = ((500, 1500), (3350, 1450))  # only for aziz1
+LINE_COORD_COLOR = NO_COLOR
 
 PRINT_FRAME_DURATION = False
 PRINT_ENCODE_DURATION = False
 
 
 def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_size, device):
-    global outputFrame
+    global outputFrame, LINE_COORD_COLOR
 
+    violations = {}
     tracked_paths = {}
     track = sort.Sort()
     i = 0
@@ -47,7 +53,9 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
                             (36, 255, 12), 2)
 
         boxes_no_class = boxes[:, :-1]
-        color = Counter(list(filter(lambda x: x != 'no color', map(lambda x: x[0], lights)))).most_common()[0][0]
+        detected_tr_lights = Counter(list(filter(lambda x: x != NO_COLOR, map(lambda x: x[0], lights)))).most_common()
+        if len(detected_tr_lights) > 0:
+            LINE_COORD_COLOR = detected_tr_lights[0][0]
         tracked_objects = track.update(boxes_no_class)
 
         font = cv2.FONT_HERSHEY_PLAIN
@@ -58,15 +66,22 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
             path = tracked_paths[obj_id]
             path.append((int((x0 + x1) / 2.), int((y0 + y1) / 2.), time.time()))
 
-            for i in range(len(path) - 1):
-                cv2.line(frame, tuple(path[i][:2]), tuple(path[i + 1][:2]), (0, 255, 0), 2)
+            if line_intersection(LINE_COORD, path) and LINE_COORD_COLOR == RED_OR_YELLOW:
+                if obj_id not in violations:
+                    print("violation!")
+                    # TODO: store something useful here, otherwise it's just a hashset
+                    violations[obj_id] = None
 
-            if line_intersection(LINE_COORD, path) and color == 'red or yellow':
-                print("violation!")
-                rgb = (215, 0, 0)
+            if obj_id in violations:
+                rect_rgb = (0, 0, 215)
+                line_rgb = (0, 0, 215)
             else:
-                rgb = (0, 215, 0)
-            cv2.rectangle(frame, (x0, y0), (x1, y1), rgb, 2)
+                rect_rgb = (0, 215, 0)
+                line_rgb = (0, 255, 0)
+            cv2.rectangle(frame, (x0, y0), (x1, y1), rect_rgb, 2)
+
+            for i in range(len(path) - 1):
+                cv2.line(frame, tuple(path[i][:2]), tuple(path[i + 1][:2]), line_rgb, 2)
 
         cv2.line(frame, LINE_COORD[0], LINE_COORD[1], (255, 0, 0), 2)
 
@@ -148,11 +163,11 @@ def traffic_color(frame, traffic_lights):
                         green_ocur += 1
 
         if red_occur > (ligth1.size / 2.7):
-            color = 'red or yellow'
+            color = RED_OR_YELLOW
         elif green_ocur > (ligth2.size / 2.7):
-            color = 'green'
+            color = GREEN
         else:
-            color = 'no color'
+            color = NO_COLOR
         result.append((color, element))
 
     return result
