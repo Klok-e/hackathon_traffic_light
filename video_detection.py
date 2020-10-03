@@ -14,8 +14,11 @@ outputFrame = None
 LINE_COORD = ((500, 1500), (3350, 1450))  # only for aziz1
 LINE_COORD_COLOR = NO_COLOR
 
+# TODO: make this into config options at startup (like --print_frame_duration --print_encode_duration etc.)
 PRINT_FRAME_DURATION = False
 PRINT_ENCODE_DURATION = False
+DRAW_DETECTION_BOXES = True
+DRAW_TRACKING_BOXES = False
 
 
 def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_size, device):
@@ -54,13 +57,18 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
 
         boxes_no_class = boxes[:, :-1]
 
+        if DRAW_DETECTION_BOXES:
+            for x0, y0, x1, y1, confidence in boxes_no_class:
+                x0, y0, x1, y1 = map(int, [x0, y0, x1, y1])
+                cv2.rectangle(frame, (x0, y0), (x1, y1), (0, 255, 255), 2)
+
         detected_tr_lights = Counter(list(filter(lambda x: x != NO_COLOR, map(lambda x: x[0], lights)))).most_common()
         if len(detected_tr_lights) > 0:
             LINE_COORD_COLOR = detected_tr_lights[0][0]
 
         tracked_objects = track.update(boxes_no_class)
 
-        font = cv2.FONT_HERSHEY_PLAIN
+        # process tracking boxes
         for x0, y0, x1, y1, obj_id in tracked_objects:
             x0, y0, x1, y1 = map(int, [x0, y0, x1, y1])
             if obj_id not in tracked_paths:
@@ -80,7 +88,10 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
             else:
                 rect_rgb = (0, 215, 0)
                 line_rgb = (0, 255, 0)
-            cv2.rectangle(frame, (x0, y0), (x1, y1), rect_rgb, 2)
+
+            # draw tracking box
+            if DRAW_TRACKING_BOXES:
+                cv2.rectangle(frame, (x0, y0), (x1, y1), rect_rgb, 2)
 
             for i in range(len(path) - 1):
                 cv2.line(frame, tuple(path[i][:2]), tuple(path[i + 1][:2]), line_rgb, 2)
