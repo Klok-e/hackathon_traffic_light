@@ -9,6 +9,9 @@ from collections import Counter
 outputFrame = None
 LINE_COORD = ((500, 1500), (3350, 1450))  # only for aziz1
 
+PRINT_FRAME_DURATION = False
+PRINT_ENCODE_DURATION = False
+
 
 def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_size, device):
     global outputFrame
@@ -19,6 +22,10 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
     while True:
         i += 1
         ret, frame = capture.read()
+
+        t0 = 0
+        if PRINT_FRAME_DURATION:
+            t0 = time.time()
 
         if not ret:
             print('no video')
@@ -68,6 +75,9 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
 
         cv2.line(frame, LINE_COORD[0], LINE_COORD[1], (255, 0, 0), 2)
 
+        if PRINT_FRAME_DURATION:
+            print(f"frame time: {time.time() - t0:.2}")
+
         outputFrame = frame
 
         # clean old paths (older than 30 seconds)
@@ -75,8 +85,6 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
             tracked_paths = {k: v for k, v in tracked_paths.items() if len(v) != 0}
             for key, val in tracked_paths.items():
                 val[:] = [[*a, time_created] for *a, time_created in val if time.time() - time_created < 30]
-
-        # print(f"frame time: {time.time() - t0:.2}")
 
 
 def generate_image_binary():
@@ -90,7 +98,12 @@ def generate_image_binary():
         if outputFrame is None:
             continue
         # encode the frame in JPEG format
+        t0 = 0
+        if PRINT_ENCODE_DURATION:
+            t0 = time.time()
         (flag, encodedImage) = cv2.imencode(".jpg", outputFrame)
+        if PRINT_ENCODE_DURATION:
+            print(f"encode time: {time.time() - t0:.2}")
         # ensure the frame was successfully encoded
         if not flag:
             continue
