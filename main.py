@@ -46,13 +46,13 @@ def main():
     from yolo_model import detect
 
     np.random.seed(42)
-    capture = cv2.VideoCapture("C:/Python/Test_test/project/hackathon_traffic_light/out32.mp4")
+    capture = cv2.VideoCapture("out32.mp4")
     img_size = 512
     model, device = detect.create_model(
-        "C:/Python/Test_test/project/hackathon_traffic_light/yolo_model/cfg/yolov3-spp.cfg",
-        "C:/Python/Test_test/project/hackathon_traffic_light/yolo/yolov3-spp-ultralytics.pt", img_size,
+        "yolo_model/cfg/yolov3-spp.cfg",
+        "yolo/yolov3-spp-ultralytics.pt", img_size,
         device="")
-    classes = detect.load_classes("C:/Python/Test_test/project/hackathon_traffic_light/yolo_model/data/coco.names")
+    classes = detect.load_classes("yolo_model/data/coco.names")
 
     t = threading.Thread(target=video_detection.capture_images_continually,
                          kwargs={"capture": capture, "model": model, "classes": classes,
