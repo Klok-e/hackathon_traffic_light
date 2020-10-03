@@ -60,16 +60,13 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
 
             for i in range(len(path) - 1):
                 cv2.line(frame, tuple(path[i][:2]), tuple(path[i + 1][:2]), (0, 255, 0), 2)
-            if len(path) > 3:
-                ind = len(path) - 2
-                # cv2.line(frame, tuple(path[ind - 2][:2]), tuple(path[ind][:2]), (215, 0, 0), 2)
-                if line_intersection(LINE_COORD,
-                                     (tuple(path[ind - 2][:2]), tuple(path[ind][:2]))) and color == 'red or yellow':
-                    cv2.rectangle(frame, (x0, y0), (x1, y1), (0, 0, 215), 2)
-                else:
-                    cv2.rectangle(frame, (x0, y0), (x1, y1), (0, 215, 0), 2)
+
+            if line_intersection(LINE_COORD, path) and color == 'red or yellow':
+                print("violation!")
+                rgb = (215, 0, 0)
             else:
-                cv2.rectangle(frame, (x0, y0), (x1, y1), (0, 215, 0), 2)
+                rgb = (0, 215, 0)
+            cv2.rectangle(frame, (x0, y0), (x1, y1), rgb, 2)
 
         cv2.line(frame, LINE_COORD[0], LINE_COORD[1], (255, 0, 0), 2)
 
@@ -162,18 +159,28 @@ def traffic_color(frame, traffic_lights):
 
 
 def line_intersection(line1, line2):
-    xdiff = (line1[0][0] - line1[1][0], line2[0][0] - line2[1][0])
-    ydiff = (line1[0][1] - line1[1][1], line2[0][1] - line2[1][1])
-
     def det(a, b):
         return a[0] * b[1] - a[1] * b[0]
 
-    div = det(xdiff, ydiff)
-    if div == 0:
-        return False
+    for i in range(len(line1) - 1):
+        for k in range(len(line2) - 1):
+            l1pos1 = line1[i]
+            l1pos2 = line1[i + 1]
+            l2pos1 = line2[k]
+            l2pos2 = line2[k + 1]
 
-    d = (det(*line1), det(*line2))
-    x = det(d, xdiff) / div
-    y = det(d, ydiff) / div
-    temp = (x - line1[0][0]) * (line1[1][1] - line1[0][1]) - (y - line1[0][1]) * (line1[1][0] - line1[0][0])
-    return temp == 0 and max(line1[0][0], line1[1][0]) > x
+            xdiff = (l1pos1[0] - l1pos2[0], l2pos1[0] - l2pos2[0])
+            ydiff = (l1pos1[1] - l1pos2[1], l2pos1[1] - l2pos2[1])
+
+            div = det(xdiff, ydiff)
+            if div == 0:
+                continue
+
+            d = (det(l1pos1, l1pos2), det(l2pos1, l2pos2))
+            x = det(d, xdiff) / div
+            y = det(d, ydiff) / div
+            temp = (x - l1pos1[0]) * (l1pos2[1] - l1pos1[1]) - (y - l1pos1[1]) * (l1pos2[0] - l1pos1[0])
+            if temp == 0 and max(l1pos1[0], l1pos2[0]) > x:
+                return True
+            # else continue
+    return False
