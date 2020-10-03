@@ -21,7 +21,8 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
         with torch.no_grad():
             boxes = detect.detect(model, frame, img_size, device=device)
 
-        boxes = boxes[np.isin(boxes[:, 5], [2, 3, 5, 7])]
+        traffic_lights = boxes[np.isin(boxes[:, 5], [9])] 
+        boxes = boxes[np.isin(boxes[:, 5], [2, 3, 5, 7])] # take car, motobuke, bus, truck 
 
         if not ret:
             print('no video')
@@ -29,6 +30,7 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
             continue
 
         boxes_no_class = boxes[:, :-1]
+        
         tracked_objects = track.update(boxes_no_class)
 
         font = cv2.FONT_HERSHEY_PLAIN
@@ -43,6 +45,10 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
                 cv2.line(frame, tuple(path[i][:2]), tuple(path[i + 1][:2]), (0, 255, 0), 2)
 
             cv2.rectangle(frame, (x0, y0), (x1, y1), (0, 215, 0), 2)
+        
+        
+        for x0, y0, x1, y1, _, __ in traffic_lights:
+            cv2.rectangle(frame, (x0, y0), (x1, y1), (255, 215, 0), 2)
 
         outputFrame = frame
 
