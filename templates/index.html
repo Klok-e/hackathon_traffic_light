@@ -10,12 +10,29 @@
             integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc="
             crossorigin="anonymous"></script>
     <script>
+            function getSize(){
+        var Httpreq = new XMLHttpRequest(); // a new request
+        Httpreq.open("GET",'http://' + window.location.host + '/vid_size',false);
+        Httpreq.send(null);
+        return Httpreq.responseText;          
+    }
                 class handler{
             constructor(){
                 this.clickTime = 0;
                 this.point1 = [0, 0];
                 this.point2 = [0, 0];
-               // alert(this.clickTime);
+                this.originalSize = [1200, 800];
+                JSON.parse(getSize(), (key, value) => {
+                    switch (key) {
+                        case 'x':
+                            originalSize[0] = parseInt(value);
+                            break;
+                        case 'y':
+                            originalSize[1] = parseInt(value);
+                            break;
+                    }
+                });
+                
             }
             handleEvent(event) {   
                 alert(this.clickTime);             
@@ -37,10 +54,11 @@
             }
 
             changeCoords(){
-                document.getElementById("line_x1").value = this.point1[0];
-                document.getElementById("line_y1").value = this.point1[1];
-                document.getElementById("line_x2").value = this.point2[0];
-                document.getElementById("line_y2").value = this.point2[1];        
+                alert(this.originalSize)
+                document.getElementById("line_x1").value = this.point1[0] / 1200 * this.originalSize[0];
+                document.getElementById("line_y1").value = this.point1[1] / 800 * this.originalSize[1];
+                document.getElementById("line_x2").value = this.point2[0] / 1200 * this.originalSize[0];
+                document.getElementById("line_y2").value = this.point2[1] / 800 * this.originalSize[1];        
             }
 
         }
