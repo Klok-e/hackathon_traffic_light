@@ -9,11 +9,51 @@
     <script src="https://code.jquery.com/jquery-3.5.1.js"
             integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc="
             crossorigin="anonymous"></script>
-    <script src="/dyn.js"></script>
+    <script>
+                class handler{
+            constructor(){
+                this.clickTime = 0;
+                this.point1 = [0, 0];
+                this.point2 = [0, 0];
+               // alert(this.clickTime);
+            }
+            handleEvent(event) {   
+                alert(this.clickTime);             
+                switch (this.clickTime){
+                    case 1:
+                        // maybe need to change to pageX
+                        this.point1 = [event.pageX, event.pageY];                        
+                        console.log(this.point1);
+                        break;
+                    case 2:
+                        this.point2 = [event.pageX, event.pageY];
+                        console.log(this.point2);
+                        this.clickTime = 0;
+                        this.changeCoords();
+                        document.removeEventListener('click');
+                        break;
+                }
+                this.clickTime++;                
+            }
+
+            changeCoords(){
+                document.getElementById("line_x1").value = this.point1[0];
+                document.getElementById("line_y1").value = this.point1[1];
+                document.getElementById("line_x2").value = this.point2[0];
+                document.getElementById("line_y2").value = this.point2[1];        
+            }
+
+        }
+        
+        var hand = new handler();
+        function lineClick(){            
+            document.addEventListener('click', hand);
+        }
+    </script>
 </head>
 <body>
 <div class="container">
-    <img src="{{ url_for('video_feed') }}" style="width: 1200px; height: 800px" alt="video feed">
+    <img id="vid" src="{{ url_for('video_feed') }}" style="width: 1200px; height: 800px" alt="video feed">
 
     <div class="line_coords">
         <form action="{{ url_for('coordinates') }}" method="post">
@@ -25,8 +65,9 @@
             <input id="line_x2" name="line_x2" value="{{ line_coords[1][0] }}"/>
             <label for="line_y2">y2:</label>
             <input id="line_y2" name="line_y2" value="{{ line_coords[1][1] }}"/>
-            <button type="submit">Указать линию</button>
+            <button type="submit">Указать координаты</button>            
         </form>
+        <button onclick="lineClick()">Указать линию</button>
     </div>
     {% if traffic_color_detect %}
     <div class="line_coords">
