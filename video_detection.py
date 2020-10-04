@@ -16,7 +16,7 @@ LINE_COORD_COLOR = NO_COLOR
 
 DETECT_TRAFFIC_LIGHT = True
 TRAFFIC_LIGHT_RECT = ((0, 0), (1, 1))
-DETECT_TRAFFIC_LIGHT_COLOR = True
+DETECT_TRAFFIC_LIGHT_COLOR = False
 
 # TODO: make this into config options at startup (like --print_frame_duration --print_encode_duration etc.)
 PRINT_FRAME_DURATION = False
