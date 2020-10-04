@@ -14,11 +14,30 @@ outputFrame = None
 LINE_COORD = ((500, 1500), (3350, 1450))  # only for aziz1
 LINE_COORD_COLOR = NO_COLOR
 
+DETECT_TRAFFIC_LIGHT = True
+TRAFFIC_LIGHT_RECT = ((0, 0), (1, 1))
+DETECT_TRAFFIC_LIGHT_COLOR = True
+
 # TODO: make this into config options at startup (like --print_frame_duration --print_encode_duration etc.)
 PRINT_FRAME_DURATION = False
 PRINT_ENCODE_DURATION = False
 DRAW_DETECTION_BOXES = True
 DRAW_TRACKING_BOXES = False
+
+
+def set_detect_traffic_color(val):
+    global DETECT_TRAFFIC_LIGHT_COLOR
+    DETECT_TRAFFIC_LIGHT_COLOR = val
+
+
+def set_detect_traffic_light():
+    global DETECT_TRAFFIC_LIGHT
+    DETECT_TRAFFIC_LIGHT = True
+
+
+def set_traffic(x1, y1, x2, y2):
+    global TRAFFIC_LIGHT_RECT
+    TRAFFIC_LIGHT_RECT = ((x1, y1), (x2, y2))
 
 
 def set_line(x1, y1, x2, y2):
@@ -27,7 +46,7 @@ def set_line(x1, y1, x2, y2):
 
 
 def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_size, device):
-    global outputFrame, LINE_COORD_COLOR
+    global outputFrame, LINE_COORD_COLOR, DETECT_TRAFFIC_LIGHT, TRAFFIC_LIGHT_RECT
 
     violations = {}
     tracked_paths = {}
@@ -49,27 +68,37 @@ def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_si
         with torch.no_grad():
             boxes = detect.detect(model, frame, img_size, device=device)
 
-        traffic_lights = boxes[np.isin(boxes[:, 5], [9])]
-        boxes = boxes[np.isin(boxes[:, 5], [2, 3, 5, 7])]  # take car, motobuke, bus, truck
+        boxes_cars = boxes[np.isin(boxes[:, 5], [2, 3, 5, 7])]  # take car, motobuke, bus, truck
 
-        lights = traffic_color(frame, traffic_lights)
+        if DETECT_TRAFFIC_LIGHT:
+            DETECT_TRAFFIC_LIGHT = False
+            traffic_lights = boxes[np.isin(boxes[:, 5], [9])]
+            traffic_lights_coords = traffic_lights[:, :4]
+            lights = traffic_color(frame, traffic_lights_coords)
 
-        for color, light in lights:
-            if color != NO_COLOR:
-                cv2.rectangle(frame, (light[0], light[1]), (light[2], light[3]), (255, 215, 0), 2)
-                cv2.putText(frame, color, (int(light[0]), int(light[1] - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.9,
-                            (36, 255, 12), 2)
+            for color, light in lights:
+                if color != NO_COLOR:
+                    TRAFFIC_LIGHT_RECT = (light[0], light[1]), (light[2], light[3])
+        if DETECT_TRAFFIC_LIGHT_COLOR:
+            nptraffic_coords = np.reshape(np.array([*TRAFFIC_LIGHT_RECT[0], *TRAFFIC_LIGHT_RECT[1]]), (1, 4))
+            lights = traffic_color(frame, nptraffic_coords)
+            detected_tr_lights = Counter(
+                list(filter(lambda x: x != NO_COLOR, map(lambda x: x[0], lights)))).most_common()
+            if len(detected_tr_lights) > 0:
+                LINE_COORD_COLOR = detected_tr_lights[0][0]
 
-        boxes_no_class = boxes[:, :-1]
+            # draw traffic light
+            cv2.rectangle(frame, TRAFFIC_LIGHT_RECT[0], TRAFFIC_LIGHT_RECT[1], (255, 215, 0), 2)
+            cv2.putText(frame, LINE_COORD_COLOR, (int(TRAFFIC_LIGHT_RECT[0][0]), int(TRAFFIC_LIGHT_RECT[0][1] - 10)),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.9,
+                        (36, 255, 12), 2)
+
+        boxes_no_class = boxes_cars[:, :-1]
 
         if DRAW_DETECTION_BOXES:
             for x0, y0, x1, y1, confidence in boxes_no_class:
                 x0, y0, x1, y1 = map(int, [x0, y0, x1, y1])
                 cv2.rectangle(frame, (x0, y0), (x1, y1), (0, 255, 255), 2)
-
-        detected_tr_lights = Counter(list(filter(lambda x: x != NO_COLOR, map(lambda x: x[0], lights)))).most_common()
-        if len(detected_tr_lights) > 0:
-            LINE_COORD_COLOR = detected_tr_lights[0][0]
 
         tracked_objects = track.update(boxes_no_class)
 
@@ -141,12 +170,17 @@ def generate_image_binary():
 
 
 def traffic_color(frame, traffic_lights):
+    """
+    :param frame:
+    :param traffic_lights: array of coordinates x0,y0,x1,y1
+    :return:
+    """
     # select the largest (temp solution)
     result = []
     for element in traffic_lights:
         color = None
 
-        x0, y0, x1, y1, _, __ = element
+        x0, y0, x1, y1 = element
         # create red mask and appy it to the light
         ligth1 = frame[int(x0): int(x1), int(y0): int(y0 + (y1 - y0) / 2)]
         lower_red = np.array([0, 85, 110], dtype="uint8")

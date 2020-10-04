@@ -18,7 +18,10 @@ def root_redirect():
 
 @app.route('/index.html')
 def default_route():
-    return flask.render_template("index.html", line_coords=video_detection.LINE_COORD)
+    return flask.render_template("index.html",
+                                 line_coords=video_detection.LINE_COORD,
+                                 traffic_coords=video_detection.TRAFFIC_LIGHT_RECT,
+                                 traffic_color_detect=video_detection.DETECT_TRAFFIC_LIGHT_COLOR)
 
 
 @app.route("/video_feed")
@@ -39,20 +42,39 @@ def coordinates():
     return flask.redirect("/index.html")
 
 
+@app.route("/traffic_light_coordinates", methods=['POST'])
+def traffic_light_coordinates():
+    x1 = request.form['traffic_x1']
+    y1 = request.form['traffic_y1']
+    x2 = request.form['traffic_x2']
+    y2 = request.form['traffic_y2']
+    x1, y1, x2, y2 = map(int, [x1, y1, x2, y2])
+
+    video_detection.set_traffic(x1, y1, x2, y2)
+
+    return flask.redirect("/index.html")
+
+
 @app.route("/detect_traffic_lights", methods=['POST'])
 def detect_traffic_lights():
+    video_detection.set_detect_traffic_light()
+    return flask.redirect("/index.html")
+
+
+@app.route("/toggle_traffic_light_detect", methods=['POST'])
+def toggle_traffic_light_detect():
+    video_detection.set_detect_traffic_color(not video_detection.DETECT_TRAFFIC_LIGHT_COLOR)
     return flask.redirect("/index.html")
 
 
 def main():
-    global outputFrame
     import threading
     import cv2
     import numpy as np
     from yolo_model import detect
 
     np.random.seed(42)
-    capture = cv2.VideoCapture("out32.mp4")
+    capture = cv2.VideoCapture("aziz1.mp4")
     if not ONLY_SERVER:
         img_size = 512
         model, device = detect.create_model(
