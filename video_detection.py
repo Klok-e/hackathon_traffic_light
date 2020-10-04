@@ -21,6 +21,11 @@ DRAW_DETECTION_BOXES = True
 DRAW_TRACKING_BOXES = False
 
 
+def set_line(x1, y1, x2, y2):
+    global LINE_COORD
+    LINE_COORD = ((x1, y1), (x2, y2))
+
+
 def capture_images_continually(capture: cv2.VideoCapture, model, classes, img_size, device):
     global outputFrame, LINE_COORD_COLOR
 

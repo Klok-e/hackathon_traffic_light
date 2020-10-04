@@ -3,6 +3,8 @@ from flask import request
 import flask
 import video_detection
 
+ONLY_SERVER = False
+
 app = Flask(__name__,
             static_url_path='',
             static_folder='static',
@@ -16,7 +18,7 @@ def root_redirect():
 
 @app.route('/index.html')
 def default_route():
-    return flask.render_template("index.html")
+    return flask.render_template("index.html", line_coords=video_detection.LINE_COORD)
 
 
 @app.route("/video_feed")
@@ -26,20 +28,24 @@ def video_feed():
 
 @app.route("/coordinates", methods=['POST'])
 def coordinates():
-    x = request.form['x']
-    print("x=" + x)
-    y = request.form['y']
-    print("y=" + y)
-    return flask.render_template("index.html")
+    x1 = request.form['line_x1']
+    y1 = request.form['line_y1']
+    x2 = request.form['line_x2']
+    y2 = request.form['line_y2']
+    x1, y1, x2, y2 = map(int, [x1, y1, x2, y2])
+
+    video_detection.set_line(x1, y1, x2, y2)
+
+    return flask.redirect("/index.html")
 
 
-@app.route("/rtl", methods=['POST'])
-def rtl():
-    pass
-    return flask.render_template("index.html")
+@app.route("/detect_traffic_lights", methods=['POST'])
+def detect_traffic_lights():
+    return flask.redirect("/index.html")
 
 
 def main():
+    global outputFrame
     import threading
     import cv2
     import numpy as np
@@ -47,18 +53,22 @@ def main():
 
     np.random.seed(42)
     capture = cv2.VideoCapture("out32.mp4")
-    img_size = 512
-    model, device = detect.create_model(
-        "yolo_model/cfg/yolov3-spp.cfg",
-        "yolo/yolov3-spp-ultralytics.pt", img_size,
-        device="")
-    classes = detect.load_classes("yolo_model/data/coco.names")
+    if not ONLY_SERVER:
+        img_size = 512
+        model, device = detect.create_model(
+            "yolo_model/cfg/yolov3-spp.cfg",
+            "yolo/yolov3-spp-ultralytics.pt", img_size,
+            device="")
+        classes = detect.load_classes("yolo_model/data/coco.names")
 
-    t = threading.Thread(target=video_detection.capture_images_continually,
-                         kwargs={"capture": capture, "model": model, "classes": classes,
-                                 "img_size": img_size, "device": device},
-                         daemon=True)
-    t.start()
+        t = threading.Thread(target=video_detection.capture_images_continually,
+                             kwargs={"capture": capture, "model": model, "classes": classes,
+                                     "img_size": img_size, "device": device},
+                             daemon=True)
+        t.start()
+    else:
+        ret, frame = capture.read()
+        video_detection.outputFrame = frame
 
     app.run()
     capture.release()
