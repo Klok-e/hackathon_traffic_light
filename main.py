@@ -21,7 +21,8 @@ def default_route():
     return flask.render_template("index.html",
                                  line_coords=video_detection.LINE_COORD,
                                  traffic_coords=video_detection.TRAFFIC_LIGHT_RECT,
-                                 traffic_color_detect=video_detection.DETECT_TRAFFIC_LIGHT_COLOR)
+                                 traffic_color_detect=video_detection.DETECT_TRAFFIC_LIGHT_COLOR,
+                                 traffic_color=video_detection.LINE_COORD_COLOR)
 
 
 @app.route("/video_feed")
@@ -64,6 +65,14 @@ def detect_traffic_lights():
 @app.route("/toggle_traffic_light_detect", methods=['POST'])
 def toggle_traffic_light_detect():
     video_detection.set_detect_traffic_color(not video_detection.DETECT_TRAFFIC_LIGHT_COLOR)
+    return flask.redirect("/index.html")
+
+
+@app.route("/toggle_traffic_light_color", methods=['POST'])
+def toggle_traffic_light_color():
+    video_detection.set_traffic_color(video_detection.GREEN
+                                      if video_detection.LINE_COORD_COLOR == video_detection.RED_OR_YELLOW
+                                      else video_detection.RED_OR_YELLOW)
     return flask.redirect("/index.html")
 
 

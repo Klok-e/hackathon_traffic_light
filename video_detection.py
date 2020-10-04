@@ -30,6 +30,11 @@ def set_detect_traffic_color(val):
     DETECT_TRAFFIC_LIGHT_COLOR = val
 
 
+def set_traffic_color(val):
+    global LINE_COORD_COLOR
+    LINE_COORD_COLOR = val
+
+
 def set_detect_traffic_light():
     global DETECT_TRAFFIC_LIGHT
     DETECT_TRAFFIC_LIGHT = True

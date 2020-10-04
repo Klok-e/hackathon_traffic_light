@@ -47,6 +47,19 @@
             <button type="submit">Распознать светофор</button>
         </form>
     </div>
+    {% else %}
+    <div>
+        <form action="{{ url_for('toggle_traffic_light_color') }}" method="post">
+            <label for="toggle_traffic_light">Цвет светофора сейчас
+                {% if traffic_color == 'red or yellow' %}
+                <span style="color: red">красный</span>
+                {% else %}
+                <span style="color: green">зелёный</span>
+                {% endif %}
+            </label>
+            <button id="toggle_traffic_light" type="submit">Переключить</button>
+        </form>
+    </div>
     {% endif %}
     <div>
         <form action="{{ url_for('toggle_traffic_light_detect') }}" method="post">
