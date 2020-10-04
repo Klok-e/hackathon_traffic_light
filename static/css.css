@@ -1,0 +1,13 @@
+.line_coords {
+    border: 2px solid black;
+    width: 200pt;
+    height: 50pt;
+}
+
+.line_coords input {
+    width: 30pt;
+}
+
+.container {
+    display: flex;
+}

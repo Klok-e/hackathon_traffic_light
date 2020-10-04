@@ -92,6 +92,8 @@ def detect(model, img0, img_size, half=False, device="cpu", conf_thres=0.3, iou_
                 boxes.append(row.cpu().numpy())
 
     # print(f"inference time: {t2 - t1:.2}s")
+    if len(boxes) == 0:
+        return np.empty((0, 6))
     return np.stack(boxes, axis=0)
 
 

@@ -3,8 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
+
+    <link rel="stylesheet" href="/css.css">
+
+    <script src="https://code.jquery.com/jquery-3.5.1.js"
+            integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc="
+            crossorigin="anonymous"></script>
+    <script src="/dyn.js"></script>
 </head>
 <body>
-<img src="{{ url_for('video_feed') }}">
+<div class="container">
+    <img src="{{ url_for('video_feed') }}" style="width: 1200px; height: 800px" alt="video feed">
+
+    <div class="line_coords">
+        <form action="{{ url_for('coordinates') }}" method="post">
+            <label for="line_x1">x1:</label>
+            <input id="line_x1" name="line_x1" value="{{ line_coords[0][0] }}"/>
+            <label for="line_y1">y1:</label>
+            <input id="line_y1" name="line_y1" value="{{ line_coords[0][1] }}"/>
+            <label for="line_x2">x2:</label>
+            <input id="line_x2" name="line_x2" value="{{ line_coords[1][0] }}"/>
+            <label for="line_y2">y2:</label>
+            <input id="line_y2" name="line_y2" value="{{ line_coords[1][1] }}"/>
+            <button type="submit">Указать линию</button>
+        </form>
+    </div>
+    {% if traffic_color_detect %}
+    <div class="line_coords">
+        <form action="{{ url_for('traffic_light_coordinates') }}" method="post">
+            <label for="traffic_x1">x1:</label>
+            <input id="traffic_x1" name="traffic_x1" value="{{ traffic_coords[0][0] }}"/>
+            <label for="traffic_y1">y1:</label>
+            <input id="traffic_y1" name="traffic_y1" value="{{ traffic_coords[0][1] }}"/>
+            <label for="traffic_x2">x2:</label>
+            <input id="traffic_x2" name="traffic_x2" value="{{ traffic_coords[1][0] }}"/>
+            <label for="traffic_y2">y2:</label>
+            <input id="traffic_y2" name="traffic_y2" value="{{ traffic_coords[1][1] }}"/>
+            <button type="submit">Указать координаты светофора</button>
+        </form>
+    </div>
+    <div>
+        <form action="{{ url_for('detect_traffic_lights') }}" method="post">
+            <button type="submit">Распознать светофор</button>
+        </form>
+    </div>
+    {% else %}
+    <div>
+        <form action="{{ url_for('toggle_traffic_light_color') }}" method="post">
+            <label for="toggle_traffic_light">Цвет светофора сейчас
+                {% if traffic_color == 'red or yellow' %}
+                <span style="color: red">красный</span>
+                {% else %}
+                <span style="color: green">зелёный</span>
+                {% endif %}
+            </label>
+            <button id="toggle_traffic_light" type="submit">Переключить</button>
+        </form>
+    </div>
+    {% endif %}
+    <div>
+        <form action="{{ url_for('toggle_traffic_light_detect') }}" method="post">
+            <label for="disable_traffic_light">Распознавание цвета светофора сейчас
+                {% if traffic_color_detect %}
+                включено
+                {% else %}
+                выключено
+                {% endif %}
+            </label>
+            <button id="disable_traffic_light" type="submit">Переключить</button>
+        </form>
+    </div>
+</div>
 </body>
 </html>
