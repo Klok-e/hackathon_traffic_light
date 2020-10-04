@@ -4,7 +4,7 @@ import flask
 import video_detection
 
 ONLY_SERVER = False
-VID_SIZE = None
+
 
 app = Flask(__name__,
             static_url_path='',
@@ -76,15 +76,7 @@ def toggle_traffic_light_color():
                                       else video_detection.RED_OR_YELLOW)
     return flask.redirect("/index.html")
 
-@app.route("/vid_size", methods=['POST'])
-def send_vid_size():
-    global VID_SIZE
-    # size = video_detection.vid_size()
-    if VID_SIZE:
-        return jsonify(x=VID_SIZE[0], y=VID_SIZE[1])
-    else:
-        return jsonify(x=1200, y=800)
-        
+
         
 
 
@@ -93,7 +85,7 @@ def main():
     import cv2
     import numpy as np
     from yolo_model import detect
-    global VID_SIZE
+    
 
     np.random.seed(42)
     capture = cv2.VideoCapture("D:/Me/hackaton/hackathon_traffic_light/aziz1.mp4")

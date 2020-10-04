@@ -24,11 +24,6 @@ PRINT_ENCODE_DURATION = False
 DRAW_DETECTION_BOXES = True
 DRAW_TRACKING_BOXES = False
 
-def vid_size():
-    if outputFrame:
-        return outputFrame.shape
-    else:
-        return None
 
 
 def set_detect_traffic_color(val):
